@@ -1,0 +1,102 @@
+repos:
+  # Python Backend Formatting and Linting
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks:
+      - id: black
+        language_version: python3
+        files: ^backend/.*\.py$
+        args: [--line-length=120]
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: [--profile=black, --line-length=120]
+        files: ^backend/.*\.py$
+
+  # - repo: https://github.com/pycqa/flake8
+  #   rev: 7.1.1
+  #   hooks:
+  #     - id: flake8
+  #       args: [--max-line-length=120, --extend-ignore=E501]
+  #       files: ^backend/.*\.py$
+
+  # General code quality checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^frontend/.*\.(md|json)$
+      - id: end-of-file-fixer
+        exclude: ^frontend/.*\.(md|json)$
+      - id: check-yaml
+      - id: check-json
+        files: ^frontend/.*\.json$
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      # - id: debug-statements
+      #   files: ^backend/.*\.py$
+
+  # Python security scanning
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.10
+    hooks:
+      - id: bandit
+        args: ['-c', 'backend/pyproject.toml', '-ll']
+        files: ^backend/.*\.py$
+        exclude: ^backend/tests/.*$
+        additional_dependencies: ['bandit[toml]']
+
+  # Local custom hooks
+  - repo: local
+    hooks:
+      # Frontend: ESLint check
+      - id: frontend-lint
+        name: Frontend ESLint Check
+        entry: bash -c 'cd frontend && npm run lint'
+        language: system
+        files: ^frontend/.*\.(js|jsx)$
+        pass_filenames: false
+
+      # Frontend: Prettier format check
+      - id: frontend-format-check
+        name: Frontend Prettier Format Check
+        entry: bash -c 'cd frontend && npm run format:check'
+        language: system
+        files: ^frontend/.*\.(js|jsx|json|css|md)$
+        pass_filenames: false
+
+      # Frontend: Build check (ensures no build errors)
+      - id: frontend-build-check
+        name: Frontend Build Check
+        entry: bash -c 'cd frontend && npm run build'
+        language: system
+        files: ^frontend/.*\.(js|jsx|css|html|json)$
+        pass_filenames: false
+
+      # Security: Check for hardcoded secrets
+      - id: check-secrets
+        name: Check for hardcoded secrets
+        entry: bash -c 'if grep -r -E "(api_key|secret_key|password|token).*=.*[\"'"'"'][A-Za-z0-9+/=]{16,}[\"'"'"']" --include="*.py" --include="*.js" --include="*.jsx" --exclude-dir=node_modules --exclude-dir=__pycache__ --exclude-dir=.git --exclude-dir=myenv --exclude-dir=venv --exclude-dir=.venv --exclude-dir=dist --exclude-dir=build backend/ frontend/src/ | grep -v "os\\.getenv\\|process\\.env\\|getenv\\|auth0_user"; then echo "Potential hardcoded secrets found in source code!"; exit 1; fi'
+        language: system
+        pass_filenames: false
+
+      # Frontend: Check for console.log statements (except in development files)
+      - id: no-console-log
+        name: No console.log statements (except in dev files)
+        entry: bash -c 'if find frontend/src -name "*.js" -o -name "*.jsx" | grep -v -E "(debug|dev|test)" | xargs grep -E -l "console\.log" | head -1 | grep -q .; then echo "Console.log statements found in frontend code!"; find frontend/src -name "*.js" -o -name "*.jsx" | grep -v -E "(debug|dev|test)" | xargs grep -E -Hn "console\.log" | head -10; exit 1; fi'
+        language: system
+        files: ^frontend/.*\.(js|jsx)$
+        pass_filenames: false
+
+      # Backend: Check for TODO/FIXME comments
+      - id: check-todos
+        name: Check for TODO/FIXME comments
+        entry: bash -c 'if find backend/ frontend/src -name "*.py" -o -name "*.js" -o -name "*.jsx" | xargs grep -E "(TODO|FIXME|XXX|HACK)" | head -1 | grep -q .; then echo "TODO/FIXME comments found - please address before committing:"; find backend/ frontend/src -name "*.py" -o -name "*.js" -o -name "*.jsx" | xargs grep -Hn -E "(TODO|FIXME|XXX|HACK)" | head -5; fi'
+        language: system
+        pass_filenames: false
+        stages: [manual]  # Only run when explicitly called
+
+fail_fast: false  # Continue running all hooks even if one fails
