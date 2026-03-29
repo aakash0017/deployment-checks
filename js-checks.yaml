@@ -1,0 +1,64 @@
+repos:
+  # General code quality checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+
+  # Local custom hooks
+  - repo: local
+    hooks:
+      # ESLint check
+      - id: eslint
+        name: ESLint Check
+        entry: bash -c 'npm run lint'
+        language: system
+        files: \.(js|jsx|ts|tsx)$
+        pass_filenames: false
+
+      # Prettier format check
+      - id: prettier-check
+        name: Prettier Format Check
+        entry: bash -c 'npm run format:check'
+        language: system
+        files: \.(js|jsx|ts|tsx|json|css|md)$
+        pass_filenames: false
+
+      # Build check
+      - id: build-check
+        name: Build Check
+        entry: bash -c 'npm run build'
+        language: system
+        files: \.(js|jsx|ts|tsx|css|html|json)$
+        pass_filenames: false
+
+      # Check for hardcoded secrets
+      - id: check-secrets
+        name: Check for hardcoded secrets
+        entry: bash -c 'if grep -r -E "(api_key|secret_key|password|token).*=.*[\"'"'"'][A-Za-z0-9+/=]{16,}[\"'"'"']" --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=build . | grep -v "process\\.env"; then echo "Potential hardcoded secrets found!"; exit 1; fi'
+        language: system
+        pass_filenames: false
+
+      # Check for console.log statements
+      - id: no-console-log
+        name: No console.log statements (except in dev files)
+        entry: bash -c 'if find src -name "*.js" -o -name "*.jsx" -o -name "*.ts" -o -name "*.tsx" | grep -v -E "(debug|dev|test)" | xargs grep -E -l "console\.log" | head -1 | grep -q .; then echo "Console.log statements found!"; find src -name "*.js" -o -name "*.jsx" -o -name "*.ts" -o -name "*.tsx" | grep -v -E "(debug|dev|test)" | xargs grep -E -Hn "console\.log" | head -10; exit 1; fi'
+        language: system
+        files: \.(js|jsx|ts|tsx)$
+        pass_filenames: false
+
+      # Check for TODO/FIXME comments
+      - id: check-todos
+        name: Check for TODO/FIXME comments
+        entry: bash -c 'if find src -name "*.js" -o -name "*.jsx" -o -name "*.ts" -o -name "*.tsx" | xargs grep -E "(TODO|FIXME|XXX|HACK)" | head -1 | grep -q .; then echo "TODO/FIXME comments found:"; find src -name "*.js" -o -name "*.jsx" -o -name "*.ts" -o -name "*.tsx" | xargs grep -Hn -E "(TODO|FIXME|XXX|HACK)" | head -5; fi'
+        language: system
+        pass_filenames: false
+        stages: [manual]
+
+fail_fast: false

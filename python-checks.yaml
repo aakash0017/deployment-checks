@@ -1,0 +1,62 @@
+repos:
+  # Python Formatting
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks:
+      - id: black
+        language_version: python3
+        args: [--line-length=120]
+
+  # Python Import Sorting
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: [--profile=black, --line-length=120]
+
+  # - repo: https://github.com/pycqa/flake8
+  #   rev: 7.1.1
+  #   hooks:
+  #     - id: flake8
+  #       args: [--max-line-length=120, --extend-ignore=E501]
+
+  # General code quality checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      # - id: debug-statements
+
+  # Python Security Scanning
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.10
+    hooks:
+      - id: bandit
+        args: ['-ll']
+        exclude: ^tests/.*$
+        additional_dependencies: ['bandit[toml]']
+
+  # Local custom hooks
+  - repo: local
+    hooks:
+      # Check for hardcoded secrets
+      - id: check-secrets
+        name: Check for hardcoded secrets
+        entry: bash -c 'if grep -r -E "(api_key|secret_key|password|token).*=.*[\"'"'"'][A-Za-z0-9+/=]{16,}[\"'"'"']" --include="*.py" --exclude-dir=__pycache__ --exclude-dir=.git --exclude-dir=venv --exclude-dir=.venv . | grep -v "os\\.getenv\\|getenv"; then echo "Potential hardcoded secrets found!"; exit 1; fi'
+        language: system
+        pass_filenames: false
+
+      # Check for TODO/FIXME comments
+      - id: check-todos
+        name: Check for TODO/FIXME comments
+        entry: bash -c 'if find . -name "*.py" -not -path "*/.venv/*" -not -path "*/venv/*" -not -path "*/__pycache__/*" | xargs grep -E "(TODO|FIXME|XXX|HACK)" | head -1 | grep -q .; then echo "TODO/FIXME comments found:"; find . -name "*.py" -not -path "*/.venv/*" -not -path "*/venv/*" -not -path "*/__pycache__/*" | xargs grep -Hn -E "(TODO|FIXME|XXX|HACK)" | head -5; fi'
+        language: system
+        pass_filenames: false
+        stages: [manual]
+
+fail_fast: false

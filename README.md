@@ -1,28 +1,15 @@
 # Deployment Checks
 
-Pre-commit hooks for projects with a `backend/` (Python) and `frontend/` (JS/JSX) structure.
+Ready-to-use [pre-commit](https://pre-commit.com/) hook configurations for Python and JavaScript projects.
 
-## What's Included
+## Files
 
-`basic-checks.yaml` contains hooks for:
+| File | Stack | Hooks |
+|------|-------|-------|
+| `python-checks.yaml` | Python | Black, isort, Bandit, secrets scanner |
+| `js-checks.yaml` | JS/TS (React, Node) | ESLint, Prettier, build check, no console.log, secrets scanner |
 
-**Backend (Python):**
-- **Black** - Auto-formats code (line length: 120)
-- **isort** - Sorts imports (Black-compatible)
-- **Bandit** - Security scanning
-
-**Frontend (JS/JSX):**
-- **ESLint** - Linting via `npm run lint`
-- **Prettier** - Format checking via `npm run format:check`
-- **Build check** - Ensures the frontend builds without errors
-- **No console.log** - Flags leftover `console.log` statements
-
-**General:**
-- Trailing whitespace and end-of-file fixes
-- YAML/JSON validation
-- Large file detection (>1MB)
-- Merge conflict marker detection
-- Hardcoded secrets scanning
+Both files also include general checks: trailing whitespace, end-of-file fixer, YAML/JSON validation, large file detection, and merge conflict markers.
 
 ## Setup
 
@@ -31,9 +18,13 @@ Pre-commit hooks for projects with a `backend/` (Python) and `frontend/` (JS/JSX
    pip install pre-commit
    ```
 
-2. Copy `basic-checks.yaml` to your repo root as `.pre-commit-config.yaml`:
+2. Copy the relevant file to your repo root as `.pre-commit-config.yaml`:
    ```bash
-   cp basic-checks.yaml /path/to/your/repo/.pre-commit-config.yaml
+   # For Python projects
+   cp python-checks.yaml /path/to/your/repo/.pre-commit-config.yaml
+
+   # For JS/TS projects
+   cp js-checks.yaml /path/to/your/repo/.pre-commit-config.yaml
    ```
 
 3. Install the hooks:
@@ -48,14 +39,20 @@ Pre-commit hooks for projects with a `backend/` (Python) and `frontend/` (JS/JSX
 
 ## Prerequisites
 
-- Python 3 (for backend hooks)
-- Node.js + npm (for frontend hooks)
-- `frontend/package.json` must have `lint`, `format:check`, and `build` scripts
-- `backend/pyproject.toml` must have a `[tool.bandit]` section
+**Python (`python-checks.yaml`):**
+- Python 3
+
+**JavaScript (`js-checks.yaml`):**
+- Node.js + npm
+- `package.json` must have `lint`, `format:check`, and `build` scripts
 
 ## Customization
 
-- Adjust `files:` patterns if your directory structure differs
-- Uncomment the flake8 hook for additional Python linting
+- Uncomment the flake8 hook in `python-checks.yaml` for additional Python linting
 - The TODO/FIXME checker runs only manually (`pre-commit run check-todos`) — remove `stages: [manual]` to run it on every commit
 - Set `fail_fast: true` to stop on the first failure
+- Adjust file patterns to match your project structure
+
+## License
+
+[MIT](LICENSE)
